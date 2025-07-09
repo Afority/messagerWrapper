@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 public final class Ai {
     private static final String AiChatId = "gigachat";
     private static Messager messager;
+    private static final String promptSuffix = "\nПиши ВСЕГДА без форматирования и выделения текста";
 
     private void goToAiChat(){
         if (!Objects.equals(messager.getCurrentChatId(), "gigachat"))
@@ -31,9 +32,6 @@ public final class Ai {
                 if (!Objects.equals(lastMsg, "")
                         && !lastMsg.startsWith("Запрос принят")
                         && !Objects.equals(lastMsg, userMessage)){
-                    System.out.println("Вероятно пришло сообщение от ai");
-                    System.out.println("Сообщение             : \"" + lastMsg + "\"");
-                    System.out.println("Сообщение пользователя: \"" + userMessage + "\"");
                     return lastMsg;
                 }
             }
@@ -63,19 +61,14 @@ public final class Ai {
 
     @PostMapping("/messages")
     public SimpleMessage aiMessages(@RequestBody SimpleMessage userMessage){
-        messager.goToTheChat("gigachat");
-        if (userMessage.content().length() > 4096){
+        goToAiChat();
+        if (userMessage.content().length() > 4096 - promptSuffix.length()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message is too long");
         }
         messager.waitInputField();
-        messager.sendMessage(userMessage.content());
+        messager.sendMessage(userMessage.content() + promptSuffix);
 
-        while(true){
-            String lastMsg = messager.getMessageText(messager.getLastMessage());
-            if (!lastMsg.startsWith("Запрос принят") && userMessage.content().compareTo(lastMsg) != 0){
-                return new SimpleMessage(lastMsg);
-            }
-        }
+        return new SimpleMessage(waitAi(userMessage.content() + promptSuffix));
     }
 }
 
