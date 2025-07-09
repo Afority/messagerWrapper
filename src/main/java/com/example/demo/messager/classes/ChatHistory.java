@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.messager.classes;
 
 import com.example.demo.types.Pair;
 
