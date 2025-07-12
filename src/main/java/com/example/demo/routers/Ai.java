@@ -39,7 +39,7 @@ public final class Ai {
         }
     }
 
-    @GetMapping("/pogoda")
+    @GetMapping("/weather")
     public String weather(@RequestParam String location) {
         goToAiChat();
         messager.waitTheInputField();
