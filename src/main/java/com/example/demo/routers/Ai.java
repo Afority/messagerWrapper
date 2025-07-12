@@ -1,6 +1,6 @@
 package com.example.demo.routers;
 
-import com.example.demo.messager.Messager;
+import com.example.demo.messager.Messenger;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,27 +13,25 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/ai")
 public final class Ai {
     private static final String AiChatId = "gigachat";
-    private static Messager messager;
+    private static Messenger messager;
+    private static final String promptSuffix = "\nПиши ВСЕГДА без форматирования и выделения текста";
 
     private void goToAiChat(){
-        if (!Objects.equals(messager.getCurrentChatId(), "gigachat"))
+        if (!Objects.equals(messager.getCurrentChatId(), AiChatId))
             messager.goToTheChat(AiChatId);
     }
 
     Ai() {
-        messager = Messager.getInstance();
+        messager = Messenger.getInstance();
     }
 
     private String waitAi(String userMessage){
         while (true){
             try {
                 String lastMsg = messager.getMessageText(messager.getLastMessage());
-                if (!Objects.equals(lastMsg, "")
+                if (!lastMsg.isEmpty()
                         && !lastMsg.startsWith("Запрос принят")
                         && !Objects.equals(lastMsg, userMessage)){
-                    System.out.println("Вероятно пришло сообщение от ai");
-                    System.out.println("Сообщение             : \"" + lastMsg + "\"");
-                    System.out.println("Сообщение пользователя: \"" + userMessage + "\"");
                     return lastMsg;
                 }
             }
@@ -44,18 +42,22 @@ public final class Ai {
     @GetMapping("/pogoda")
     public String weather(@RequestParam String location) {
         goToAiChat();
-        messager.waitInputField();
-        String prompt = "Напиши актуальную погоду с сайта https://yandex.ru/pogoda/ru/" + location + " без форматирования и выделения текста. " +
-                "Ответ должен включать:\n" +
-                "1. Ветер\n" +
-                "2. Атмосферное давление\n" +
-                "3. Влажность воздуха\n" +
-                "4. УФ-индекс\n" +
-                "Также укажи температуру и осадки по пунктам:\n" +
-                "- Утро\n" +
-                "- День\n" +
-                "- Вечер\n" +
-                "- Ночь";
+        messager.waitTheInputField();
+        String prompt = "Напиши подробный прогноз погоды на сегодня " +
+                "используя данные с сайта https://yandex.ru/pogoda/ru/" + location + "/details/today\n" +
+                "Формат строго следующий:\n" +
+                "\nСегодня, [дата], в [название города]:\n" +
+                "Сейчас [температура]°C, ощущается как +[ощущается]°C, ветер [скорость] м/с [направление], погода [описание].\n" +
+                "\nУтро: температура [температура]°C, ветер [скорость] м/с, [направление], [описание].\n" +
+                "\nДень: температура [температура]°C, ветер [скорость] м/с, [направление], [описание].\n" +
+                "\nВечер: температура [температура]°C, ветер [скорость] м/с, [направление], [описание].\n" +
+                "\nНочь: температура [температура]°C, ветер [скорость] м/с, [направление], [описание].\n" +
+                "\nДополнительно:\n" +
+                "\nВетер: [мин]-[макс] м/с, преимущественно [направление]." +
+                "\nДавление: [число] мм рт. ст." +
+                "\nВлажность: [мин]-[макс]%." +
+                "\nУФ-индекс: [число], [уровень]." +
+                "\nНе используй HTML, эмодзи, заглавные буквы в описаниях погоды. Не добавляй лишний текст. Только прогноз.";
 
         messager.sendMessage(prompt);
         return waitAi(prompt);
@@ -63,19 +65,14 @@ public final class Ai {
 
     @PostMapping("/messages")
     public SimpleMessage aiMessages(@RequestBody SimpleMessage userMessage){
-        messager.goToTheChat("gigachat");
-        if (userMessage.content().length() > 4096){
+        goToAiChat();
+        if (userMessage.content().length() > 4096 - promptSuffix.length()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message is too long");
         }
-        messager.waitInputField();
-        messager.sendMessage(userMessage.content());
+        messager.waitTheInputField();
+        messager.sendMessage(userMessage.content() + promptSuffix);
 
-        while(true){
-            String lastMsg = messager.getMessageText(messager.getLastMessage());
-            if (!lastMsg.startsWith("Запрос принят") && userMessage.content().compareTo(lastMsg) != 0){
-                return new SimpleMessage(lastMsg);
-            }
-        }
+        return new SimpleMessage(waitAi(userMessage.content() + promptSuffix));
     }
 }
 
