@@ -21,17 +21,19 @@ import com.example.demo.messager.classes.Message;
 
 // import java.util.Optional;
 
-public final class Messager {
+public final class Messenger {
     private static final String siteUrl = "https://web.max.ru";
     private static final String pathToGoogleChromeConfig = "user-data-dir=/home/user/.config/google-chrome/Default/";
-    private static final Messager INSTANCE = new Messager();
+
+    private static final Messenger INSTANCE = new Messenger();
+
     private final ChromeDriver driver;
     private DevTools devTools;
 
-    public static Messager getInstance() {
+    public static Messenger getInstance() {
         return INSTANCE;
     }
-    private Messager() {
+    private Messenger() {
         ChromeOptions options = new ChromeOptions();
         options.addArguments(pathToGoogleChromeConfig);
         driver = new ChromeDriver(options);
@@ -141,12 +143,12 @@ public final class Messager {
                 .findElements(By.xpath("./div"));
 
         List<Message> result = new ArrayList<>();
-        for (int i = 0; i < messages.size(); ++i) {
+        for (int id = 0; id < messages.size(); ++id) {
             result.add(new Message(
-                    i,
-                    getMessageSender(messages.get(i)),
-                    getMessageText(messages.get(i)),
-                    getMessageTime(messages.get(i))
+                    id,
+                    getMessageSender(messages.get(id)),
+                    getMessageText(messages.get(id)),
+                    getMessageTime(messages.get(id))
             ));
         }
         return result;
