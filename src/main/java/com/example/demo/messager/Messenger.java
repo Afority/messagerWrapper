@@ -5,15 +5,15 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.devtools.DevTools;
 
-import java.time.Duration;
 import java.util.ArrayList;
+import java.time.Duration;
+import java.util.Objects;
 import java.util.List;
 
-import com.example.demo.types.Pair;
-
-import com.example.demo.messager.classes.Message;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import com.example.demo.messager.classes.Message;
 
 //import org.openqa.selenium.devtools.events.CdpEventTypes;
 //import org.openqa.selenium.devtools.v123.network.Network;
@@ -99,12 +99,13 @@ public final class Messager {
         return driver.findElement(By.xpath("//div[@placeholder='Сообщение']"));
     }
 
-    public List<Pair<String, Integer>> getRecipients(){
-        ArrayList<Pair<String, Integer>> list = new ArrayList<>();
-        return null;
-    }
+//    public List<Pair<String, Integer>> getRecipients(){
+//        ArrayList<Pair<String, Integer>> list = new ArrayList<>();
+//        return null;
+//    }
 
     public void goToTheChat(String chatId){
+        if (Objects.equals(getCurrentChatId(), chatId)) return;
         driver.get(siteUrl + "/" + chatId);
     }
 
@@ -165,7 +166,12 @@ public final class Messager {
     }
 
     public String getMessageSender(WebElement message){
-        return null;
+        try{
+            message.findElement(By.xpath(".//div[contains(@class, 'bordersWrapper----left')]"));
+            return "not me";
+        }
+        catch (NoSuchElementException ignored){}
+        return "me";
     }
 
     public String getMessageText(int messageId){
@@ -173,7 +179,10 @@ public final class Messager {
     }
 
     public String getMessageTime(WebElement message){
-        return null;
+        return message
+                .findElement(By.xpath(".//div[contains(@class, 'bubble')]"))
+                .findElement(By.xpath("./span[contains(@class, 'meta')]"))
+                .getText();
         //return getMessage(messageId).findElement(By.xpath("./div/div/div[1]/div/div/div/div/span/div/span")).getText();
     }
 
@@ -216,7 +225,7 @@ public final class Messager {
             }
         }
     }
-    public void waitInputField(){
+    public void waitTheInputField(){
         while (true) {
             try{
                 getInputField();
