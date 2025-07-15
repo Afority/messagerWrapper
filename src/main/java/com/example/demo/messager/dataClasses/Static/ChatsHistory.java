@@ -23,8 +23,10 @@ public class ChatsHistory {
             if (chatHistory == null) {
                 ChatHistory newChat = new ChatHistory(chatId);
                 newChat.updateMessage(message);
-                chatHistoryList.add(newChat);
                 addChat(newChat);
+            }
+            else{
+                chatHistory.updateMessage(message);
             }
         }
         catch (IndexOutOfBoundsException e){
